@@ -1,3 +1,6 @@
+import 'dart:ffi';
+import 'dart:io';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -82,6 +85,9 @@ class _HomePageState extends State<HomePage> {
   int selectCamera = 0;
   ResolutionPreset selectResolution = ResolutionPreset.low;
 
+  // Socket客户端
+  RawDatagramSocket? socket;
+
   // 初始化页面
   @override
   void initState() {
@@ -117,7 +123,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   // 开始推流
-  void startRecording() {
+  void startRecording() async {
+    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 5060);
+    socket!.listen(handleSocketEvent);
+    // 开始注册
+    if (! handleSipRegister()) {
+      socket!.close();
+      return;
+    }
+
+    Fluttertoast.showToast(msg: "UDP服务已启动");
     if (controller != null && controller!.value.isInitialized) {
       controller?.startImageStream((CameraImage image) {
         processCameraImage(image);
@@ -128,8 +143,29 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+
+  // 监听UDP服务事件
+  void handleSocketEvent(RawSocketEvent event) {
+    // 收取数据
+    if (event == RawSocketEvent.read) {
+      handleSocketReceive(socket!.receive());
+    }
+    // 写入事件
+    if (event == RawSocketEvent.write) {
+
+    }
+  }
+
+  // 监听接收事件及数据
+  void handleSocketReceive(Datagram? datagram) {
+
+  }
+
   // 停止推流
   void stopRecording() {
+    socket!.close();
+    socket = null;
+    Fluttertoast.showToast(msg: "UDP服务已关闭");
     if (controller != null && controller!.value.isInitialized) {
       controller?.stopImageStream();
       setState(() {
@@ -141,7 +177,35 @@ class _HomePageState extends State<HomePage> {
   // 处理流
   void processCameraImage(CameraImage image) {
 
-    print("摄像头流: ${image}");
+  }
+
+  // 启动推流后，注册服务
+  bool handleSipRegister() {
+    String? ipStr = _preferences!.getString("ip");
+    String? portStr = _preferences!.getString("port");
+    if (ipStr == null || portStr == null) {
+      return false;
+    }
+    InternetAddress? address = InternetAddress.tryParse(_preferences!.getString("ip")!);
+    if (address == null) {
+      Fluttertoast.showToast(msg: "注册IP错误！");
+      return false;
+    }
+    String registerMessage = '''
+REGISTER sip:62120000002005001024@6212000000 SIP/2.0
+Via: SIP/2.0/UDP $ipStr:$portStr;rport;branch=z9hG4bK756439861
+From: <sip:62120000002005000000@6212000000>;tag=3969513187
+To: <sip:62120000002005001024@6212000000>
+Call-ID: 3425595801
+CSeq: 1 REGISTER
+Contact: <sip:62120000002005000000@$ipStr:9999;line=e74829c82eb7149>
+Max-Forwards: 70
+Expires: 3600
+Content-Length: 0
+\r\n
+''';
+    socket!.send(registerMessage.codeUnits, address, int.parse(portStr));
+    return true;
   }
 
   @override
