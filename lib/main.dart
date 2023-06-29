@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gb28181/setting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
