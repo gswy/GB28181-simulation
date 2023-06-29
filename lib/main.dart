@@ -1,8 +1,9 @@
-import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gb28181/setting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -164,19 +165,30 @@ class _HomePageState extends State<HomePage> {
 
   // 停止推流
   void stopRecording() {
-    socket!.close();
-    socket = null;
-    Fluttertoast.showToast(msg: "UDP服务已关闭");
-    if (controller != null && controller!.value.isInitialized) {
-      controller?.stopImageStream();
+    if (socket == null) {
       setState(() {
         recording = false;
       });
+      return;
+    }
+    socket!.close();
+    socket = null;
+    Fluttertoast.showToast(msg: "UDP服务已关闭");
+    if (controller != null) {
+      if (controller!.value.isInitialized) {
+        controller?.stopImageStream();
+        setState(() {
+          recording = false;
+        });
+      }
     }
   }
 
   // 处理流
   void processCameraImage(CameraImage image) {
+    // 获取图像数据
+    final Uint8List bytes = image.planes[0].bytes;
+
 
   }
 
@@ -268,9 +280,9 @@ Content-Length: 0
             Container(height: 20),
             recording ? ElevatedButton(onPressed: () {
               stopRecording();
-            }, child: const Text("停止推流")) : ElevatedButton(onPressed: () {
+            }, child: const Text("停止注册")) : ElevatedButton(onPressed: () {
               startRecording();
-            }, child: const Text("开始推流"))
+            }, child: const Text("信令注册"))
           ],
         ),
       )// This trailing comma makes auto-formatting nicer for build methods.
