@@ -48,6 +48,40 @@ class _HomePageState extends State<HomePage> {
   // 存储数据
   SharedPreferences? _preferences;
 
+  // 摄像头清晰度
+  List<DropdownMenuItem> resolution = [
+    const DropdownMenuItem(
+      value: ResolutionPreset.low,
+      child: Text("240p (320x240)"),
+    ),
+    const DropdownMenuItem(
+      value: ResolutionPreset.medium,
+      child: Text("480p (640x480)"),
+    ),
+    const DropdownMenuItem(
+      value: ResolutionPreset.high,
+      child: Text("720p (1280x720)"),
+    ),
+    const DropdownMenuItem(
+      value: ResolutionPreset.veryHigh,
+      child: Text("1080p (1920x1080)"),
+    ),
+    const DropdownMenuItem(
+      value: ResolutionPreset.ultraHigh,
+      child: Text("2160p (3840x2160)"),
+    ),
+    const DropdownMenuItem(
+      value: ResolutionPreset.max,
+      child: Text("原画"),
+    ),
+  ];
+
+  // 切换前后
+  List<DropdownMenuItem> cameraList = [];
+
+  int selectCamera = 0;
+  ResolutionPreset selectResolution = ResolutionPreset.low;
+
   // 初始化页面
   @override
   void initState() {
@@ -59,10 +93,23 @@ class _HomePageState extends State<HomePage> {
     });
     availableCameras().then((value) {
       cameras = value;
-      controller = CameraController(cameras[1], ResolutionPreset.low);
-      controller?.initialize();
+      // 设置摄像头列表
+      List<DropdownMenuItem> cameraLists = [];
+      int key = 0;
+      for (var description in value) {
+        cameraLists.add(DropdownMenuItem(value: key, child: Text("摄像头：${description.name}")));
+        key ++;
+      }
+
       setState(() {
-        ready = true;
+        cameraList = cameraLists;
+      });
+
+      controller = CameraController(cameras[selectCamera], selectResolution);
+      controller!.initialize().then((val) {
+        setState(() {
+          ready = true;
+        });
       });
     }).catchError((onError) {
       print(onError);
@@ -114,17 +161,53 @@ class _HomePageState extends State<HomePage> {
           }, icon: const Icon(Icons.settings))
         ],
       ),
-      body: ListView(
-        children: [
-          ready ? CameraPreview(controller!) :
-          const Text("加载摄像头中..."),
-          Container(height: 50),
-          recording ? ElevatedButton(onPressed: () {
-            stopRecording();
-          }, child: const Text("停止推流")) : ElevatedButton(onPressed: () {
-            startRecording();
-          }, child: const Text("开始推流"))
-        ],
+      body: Container(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            ready ? CameraPreview(controller!) :
+            const Text("加载摄像头中..."),
+            Container(height: 50),
+            DropdownButtonFormField(
+              decoration: const InputDecoration(labelText: '切换摄像头'),
+              items: cameraList,
+              value: 0,
+              onChanged: (val) async {
+                if (controller == null) return;
+                await controller!.setDescription(cameras[val]);
+                selectCamera = val;
+                stopRecording();
+                Fluttertoast.showToast(msg: "切换摄像头后，请重新推流");
+              }),
+            Container(height: 20),
+            DropdownButtonFormField(
+              decoration: const InputDecoration(labelText: '选择清晰度'),
+              items: resolution.toList(),
+              value: ResolutionPreset.low,
+              onChanged: (val) async {
+                if (controller == null) return;
+                setState(() {
+                  ready = false;
+                });
+                stopRecording();
+                Fluttertoast.showToast(msg: "切换清晰度后，请重新推流");
+                // 停止原有相机
+                await controller!.dispose();
+                controller = CameraController(cameras[selectCamera], val);
+                selectResolution = val;
+                await controller!.initialize();
+                setState(() {
+                  ready = true;
+                });
+              }),
+            Container(height: 20),
+            recording ? ElevatedButton(onPressed: () {
+              stopRecording();
+            }, child: const Text("停止推流")) : ElevatedButton(onPressed: () {
+              startRecording();
+            }, child: const Text("开始推流"))
+          ],
+        ),
       )// This trailing comma makes auto-formatting nicer for build methods.
     );
   }
