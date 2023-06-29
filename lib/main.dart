@@ -158,7 +158,8 @@ class _HomePageState extends State<HomePage> {
 
   // 监听接收事件及数据
   void handleSocketReceive(Datagram? datagram) {
-
+    if (datagram == null) return;
+    print("接收到消息: ${String.fromCharCodes(datagram.data).trim()}");
   }
 
   // 停止推流
