@@ -1,6 +1,6 @@
 # GB28181-simulation
 
-[![](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/gswy/GB28181-simulation/blob/main/LICENSE)
+[![](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/gswy/GB28181-simulation/blob/main/LICENSE.txt)
 
 ## 项目简介
 项目中需要使用GB28181平台级联方式对接，使用了`WVP`此类开源软件，苦于手头没有现成的摄像头抓包测试，于是此项目诞生了。该
