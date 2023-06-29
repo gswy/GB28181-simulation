@@ -114,7 +114,7 @@ class _HomePageState extends State<HomePage> {
           }, icon: const Icon(Icons.settings))
         ],
       ),
-      body: Column(
+      body: ListView(
         children: [
           ready ? CameraPreview(controller!) :
           const Text("加载摄像头中..."),
