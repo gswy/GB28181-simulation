@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'manager/CameraManager.dart';
+import 'manager/StorageManager.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
   final String title;
@@ -26,34 +29,6 @@ class _HomePageState extends State<HomePage> {
   // 存储数据
   SharedPreferences? _preferences;
 
-  // 摄像头清晰度
-  List<DropdownMenuItem> resolution = [
-    const DropdownMenuItem(
-      value: ResolutionPreset.low,
-      child: Text("240p (320x240)"),
-    ),
-    const DropdownMenuItem(
-      value: ResolutionPreset.medium,
-      child: Text("480p (640x480)"),
-    ),
-    const DropdownMenuItem(
-      value: ResolutionPreset.high,
-      child: Text("720p (1280x720)"),
-    ),
-    const DropdownMenuItem(
-      value: ResolutionPreset.veryHigh,
-      child: Text("1080p (1920x1080)"),
-    ),
-    const DropdownMenuItem(
-      value: ResolutionPreset.ultraHigh,
-      child: Text("2160p (3840x2160)"),
-    ),
-    const DropdownMenuItem(
-      value: ResolutionPreset.max,
-      child: Text("原画"),
-    ),
-  ];
-
   // 切换前后
   List<DropdownMenuItem> cameraList = [];
 
@@ -70,33 +45,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    SharedPreferences.getInstance().then((value) {
-      setState(() {
-        _preferences = value;
-      });
-    });
-    availableCameras().then((value) {
-      cameras = value;
-      // 设置摄像头列表
-      List<DropdownMenuItem> cameraLists = [];
-      int key = 0;
-      for (var description in value) {
-        cameraLists.add(DropdownMenuItem(value: key, child: Text("摄像头：${description.name}")));
-        key ++;
-      }
 
-      setState(() {
-        cameraList = cameraLists;
-      });
+    var cameras = CameraManager().getCameras();
+    var resolutions = CameraManager().getResolutions();
 
-      controller = CameraController(cameras[selectCamera], selectResolution);
-      controller!.initialize().then((val) {
-        setState(() {
-          ready = true;
-        });
+    controller = CameraController(cameras[StorageManager().getCamera()], resolutions[StorageManager().getResolution()]);
+    controller!.initialize().then((val) {
+      setState(() {
+        ready = true;
       });
-    }).catchError((onError) {
-      print(onError);
     });
   }
 
@@ -270,7 +227,7 @@ Content-Length: 0
               Container(height: 20),
               DropdownButtonFormField(
                   decoration: const InputDecoration(labelText: '选择清晰度'),
-                  items: resolution.toList(),
+                  items: CameraManager().getResolutions().toList(),
                   value: ResolutionPreset.low,
                   onChanged: (val) async {
                     if (controller == null) return;

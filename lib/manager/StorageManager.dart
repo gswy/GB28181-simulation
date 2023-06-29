@@ -123,5 +123,29 @@ class StorageManager {
   String? getServerPassword() {
     return _preferences.getString("server-password");
   }
+  
+  /// 设置选中分辨率
+  setResolution(int select) {
+    _preferences.setInt("resolution", select);
+  }
+
+  /// 获取选中分辨率
+  int getResolution() {
+    int? select = _preferences.getInt("resolution");
+    if (select == null) return 0;
+    return select;
+  }
+
+  /// 设置选中相机
+  setCamera(int select) {
+    _preferences.setInt("camera", select);
+  }
+
+  /// 获取选中相机
+  int getCamera() {
+    int? select = _preferences.getInt("camera");
+    if (select == null) return 0;
+    return select;
+  }
 
 }

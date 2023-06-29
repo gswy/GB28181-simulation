@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gb28181/about.dart';
+import 'package:gb28181/manager/CameraManager.dart';
 import 'package:gb28181/manager/StorageManager.dart';
 import 'package:gb28181/setting.dart';
 
@@ -9,6 +10,7 @@ import 'home.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageManager().init();
+  await CameraManager().init();
   runApp(const MyApp());
 }
 
