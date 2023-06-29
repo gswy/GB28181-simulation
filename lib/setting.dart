@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:gb28181/manager/StorageManager.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key, required this.title});
@@ -12,48 +11,54 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage> {
 
-  final TextEditingController _idController = TextEditingController();
-  final TextEditingController _domainController = TextEditingController();
-  final TextEditingController _ipController = TextEditingController();
-  final TextEditingController _portController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _heartbeatController = TextEditingController();
-  final TextEditingController _retryController = TextEditingController();
-  SharedPreferences? _preferences;
+  /// 平台相关
+  final TextEditingController _serverIDController = TextEditingController();
+  final TextEditingController _serverDomainController = TextEditingController();
+  final TextEditingController _serverIPController = TextEditingController();
+  final TextEditingController _serverPortController = TextEditingController();
+  final TextEditingController _serverUsernameController = TextEditingController();
+  final TextEditingController _serverPasswordController = TextEditingController();
+
+  /// 设备相关
+  final TextEditingController _deviceIDController = TextEditingController();
+  final TextEditingController _deviceDomainController = TextEditingController();
+  final TextEditingController _devicePortController = TextEditingController();
+  final TextEditingController _deviceHeartbeatController = TextEditingController();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    SharedPreferences.getInstance().then((value) {
-      setState(() {
-        _preferences = value;
-      });
-      _idController.text = value.getString("id") ?? "";
-      _domainController.text = value.getString("domain") ?? "";
-      _ipController.text = value.getString("ip") ?? "";
-      _portController.text = value.getString("port") ?? "";
-      _usernameController.text = value.getString("username") ?? "";
-      _passwordController.text = value.getString("password") ?? "";
-      _heartbeatController.text = value.getString("heartbeat") ?? "10";
-      _retryController.text = value.getString("retry") ?? "30";
-    });
+    /// 保存平台相关
+    _serverIDController.text = StorageManager().getServerID() ?? "";
+    _serverDomainController.text = StorageManager().getServerDomain() ?? "";
+    _serverIPController.text = StorageManager().getServerIP() ?? "";
+    _serverPortController.text = StorageManager().getServerPort().toString();
+    _serverUsernameController.text = StorageManager().getServerUsername() ?? "";
+    _serverPasswordController.text = StorageManager().getServerPassword() ?? "";
+
+    /// 保存设备相关
+    _deviceIDController.text = StorageManager().getDeviceID() ?? "";
+    _deviceDomainController.text = StorageManager().getDeviceDomain() ?? "";
+    _devicePortController.text = StorageManager().getDevicePort().toString();
+    _deviceHeartbeatController.text = StorageManager().getDeviceHeartbeat().toString();
   }
 
   // 保存表单数据
-  void _handleSave() async {
-      if (_preferences != null) {
-        _preferences!.setString("id", _idController.text);
-        _preferences!.setString("domain", _domainController.text);
-        _preferences!.setString("ip", _ipController.text);
-        _preferences!.setString("port", _portController.text);
-        _preferences!.setString("username", _usernameController.text);
-        _preferences!.setString("password", _passwordController.text);
-        _preferences!.setString("heartbeat", _heartbeatController.text);
-        _preferences!.setString("retry", _retryController.text);
-        Navigator.pop(context, true);
-      }
+  void _handleSave() {
+      /// 保存平台相关
+      StorageManager().setServerID(_serverIDController.text);
+      StorageManager().setServerDomain(_serverDomainController.text);
+      StorageManager().setServerIP(_serverIPController.text);
+      StorageManager().setServerPort(int.parse(_serverPortController.text));
+      StorageManager().setServerUsername(_serverUsernameController.text);
+      StorageManager().setServerPassword(_serverPasswordController.text);
+
+      /// 保存设备相关
+      StorageManager().setDeviceID(_deviceIDController.text);
+      StorageManager().setDeviceDomain(_deviceDomainController.text);
+      StorageManager().setDevicePort(int.parse(_devicePortController.text));
+      StorageManager().setDeviceHeartbeat(int.parse(_deviceHeartbeatController.text));
+      Navigator.pop(context, true);
   }
 
   @override
@@ -75,45 +80,56 @@ class _SettingPageState extends State<SettingPage> {
             child: ListView(
               children: [
                 TextFormField(
-                  controller: _idController,
+                  controller: _serverIDController,
                   decoration: const InputDecoration(labelText: "平台ID"),
                   validator: (value) {},
                 ),
                 TextFormField(
-                  controller: _domainController,
+                  controller: _serverDomainController,
                   decoration: const InputDecoration(labelText: "平台域"),
                   validator: (value) {},
                 ),
                 TextFormField(
-                  controller: _ipController,
+                  controller: _serverIPController,
                   decoration: const InputDecoration(labelText: "平台IP"),
                   validator: (value) {},
                 ),
                 TextFormField(
-                  controller: _portController,
+                  controller: _serverPortController,
                   decoration: const InputDecoration(labelText: "平台端口"),
                   validator: (value) {},
                 ),
                 TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(labelText: "用户名"),
+                  controller: _serverUsernameController,
+                  decoration: const InputDecoration(labelText: "平台用户"),
                   validator: (value) {},
                 ),
                 TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: "密码"),
+                  controller: _serverPasswordController,
+                  decoration: const InputDecoration(labelText: "平台密码"),
                   validator: (value) {
 
                   },
                 ),
+
                 TextFormField(
-                  controller: _heartbeatController,
-                  decoration: const InputDecoration(labelText: "心跳间隔"),
+                  controller: _deviceIDController,
+                  decoration: const InputDecoration(labelText: "设备ID"),
                   validator: (value) {},
                 ),
                 TextFormField(
-                  controller: _retryController,
-                  decoration: const InputDecoration(labelText: "重试间隔"),
+                  controller: _deviceDomainController,
+                  decoration: const InputDecoration(labelText: "设备域"),
+                  validator: (value) {},
+                ),
+                TextFormField(
+                  controller: _devicePortController,
+                  decoration: const InputDecoration(labelText: "设备端口"),
+                  validator: (value) {},
+                ),
+                TextFormField(
+                  controller: _deviceHeartbeatController,
+                  decoration: const InputDecoration(labelText: "设备心跳"),
                   validator: (value) {},
                 ),
               ],
