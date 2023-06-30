@@ -6,9 +6,11 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:gb28181/manager/SocketManager.dart';
 
 import 'manager/CameraManager.dart';
 import 'manager/StorageManager.dart';
+import 'manager/SocketManager.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
@@ -50,22 +52,12 @@ class _HomePageState extends State<HomePage> {
 
   // 开始推流
   void startRecording() async {
-    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 5060);
-    socket!.listen(handleSocketEvent);
-    // 开始注册
-    if (! handleSipRegister()) {
-      socket!.close();
-      return;
-    }
-
+    bool res = await SocketManager().register();
+    if (! res) return;
     Fluttertoast.showToast(msg: "UDP服务已启动");
     if (controller != null && controller!.value.isInitialized) {
-      controller?.startImageStream((CameraImage image) {
-        processCameraImage(image);
-      });
-      setState(() {
-        recording = true;
-      });
+      controller?.startImageStream(SocketManager().processCameraImage);
+      setState(() {recording = true;});
     }
   }
 
