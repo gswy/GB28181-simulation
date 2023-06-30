@@ -37,15 +37,14 @@ class _HomePageState extends State<HomePage> {
     loadCamera();
   }
 
+  /// 初始化相机
   void loadCamera() {
     var cameras = CameraManager().getCameras();
     var resolutions = CameraManager().getResolutions();
 
     controller = CameraController(cameras[StorageManager().getCamera()], resolutions[StorageManager().getResolution()]);
     controller!.initialize().then((val) {
-      setState(() {
-        ready = true;
-      });
+      setState(() {ready = true;});
     });
   }
 
@@ -92,9 +91,7 @@ class _HomePageState extends State<HomePage> {
   // 停止推流
   void stopRecording() {
     if (socket == null) {
-      setState(() {
-        recording = false;
-      });
+      setState(() {recording = false;});
       return;
     }
     socket!.close();
@@ -103,9 +100,7 @@ class _HomePageState extends State<HomePage> {
     if (controller != null) {
       if (controller!.value.isInitialized) {
         controller?.stopImageStream();
-        setState(() {
-          recording = false;
-        });
+        setState(() {recording = false;});
       }
     }
   }

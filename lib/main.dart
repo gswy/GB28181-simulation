@@ -2,17 +2,17 @@
 import 'package:flutter/material.dart';
 import 'package:gb28181/about.dart';
 import 'package:gb28181/manager/CameraManager.dart';
+import 'package:gb28181/manager/SocketManager.dart';
 import 'package:gb28181/manager/StorageManager.dart';
 import 'package:gb28181/setting.dart';
 
 import 'home.dart';
-import 'manager/SipManager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageManager().init();
   await CameraManager().init();
-  await SipManager().init();
+  await SocketManager().init();
   runApp(const MyApp());
 }
 
