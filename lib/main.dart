@@ -6,11 +6,13 @@ import 'package:gb28181/manager/StorageManager.dart';
 import 'package:gb28181/setting.dart';
 
 import 'home.dart';
+import 'manager/SipManager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageManager().init();
   await CameraManager().init();
+  await SipManager().init();
   runApp(const MyApp());
 }
 

@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'manager/CameraManager.dart';
 import 'manager/StorageManager.dart';
@@ -23,17 +22,7 @@ class _HomePageState extends State<HomePage> {
 
   bool ready = false;
   bool recording = false;
-  List<CameraDescription> cameras = [];
   CameraController? controller;
-
-  // 存储数据
-  SharedPreferences? _preferences;
-
-  // 切换前后
-  List<DropdownMenuItem> cameraList = [];
-
-  int selectCamera = 0;
-  ResolutionPreset selectResolution = ResolutionPreset.low;
 
   // Socket客户端
   RawDatagramSocket? socket;
@@ -45,7 +34,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    loadCamera();
+  }
 
+  void loadCamera() {
     var cameras = CameraManager().getCameras();
     var resolutions = CameraManager().getResolutions();
 
@@ -128,61 +120,34 @@ class _HomePageState extends State<HomePage> {
 
   // 心跳处理
   void handleHeartbeat() {
-    int second = _preferences!.getInt("heartbeat") ?? 10;
-    int num = 10000;
-    String? ipStr = _preferences!.getString("ip");
-    String? portStr = _preferences!.getString("port");
-    InternetAddress? address = InternetAddress.tryParse(_preferences!.getString("ip")!);
-    String heartbeatMessage = '''
-MESSAGE sip:62120000002005001024@6212000000 SIP/2.0
-From: <sip:62120000002005000000@6212000000>;tag=3969513187
-To: <sip:62120000002005001024@6212000000>
-Call-ID: 3425595801
-CSeq: 1129861734 MESSAGE
-Via: SIP/2.0/UDP 192.168.0.121:8888;rport;branch=z9hG4bK756439861
-Max-Forwards: 70	
-Content-Type: application/MANSCDP+xml	
-Content-Length: 145
-
-<?xml version="1.0" ?>
-<Notify>
-<CmdType>Keepalive</CmdType>
-<SN>736</SN>
-<DeviceID>62120000002005000000</DeviceID>
-<Status>OK</Status>
-</Notify>
-''';
-    _heartbeat = Timer.periodic(Duration(seconds: second), (timer) {
-      socket!.send(heartbeatMessage.codeUnits, address!, int.parse(portStr!));
-    });
+//     int second = _preferences!.getInt("heartbeat") ?? 10;
+//     int num = 10000;
+//     String? ipStr = _preferences!.getString("ip");
+//     String? portStr = _preferences!.getString("port");
+//     InternetAddress? address = InternetAddress.tryParse(_preferences!.getString("ip")!);
+//     String heartbeatMessage = '''
+// ''';
+//     _heartbeat = Timer.periodic(Duration(seconds: second), (timer) {
+//       socket!.send(heartbeatMessage.codeUnits, address!, int.parse(portStr!));
+//     });
   }
 
   // 启动推流后，注册服务
   bool handleSipRegister() {
-    String? ipStr = _preferences!.getString("ip");
-    String? portStr = _preferences!.getString("port");
-    if (ipStr == null || portStr == null) {
-      return false;
-    }
-    InternetAddress? address = InternetAddress.tryParse(_preferences!.getString("ip")!);
-    if (address == null) {
-      Fluttertoast.showToast(msg: "注册IP错误！");
-      return false;
-    }
-    String registerMessage = '''
-REGISTER sip:62120000002005001024@6212000000 SIP/2.0
-Via: SIP/2.0/UDP $ipStr:$portStr;rport;branch=z9hG4bK756439861
-From: <sip:62120000002005000000@6212000000>;tag=3969513187
-To: <sip:62120000002005001024@6212000000>
-Call-ID: 3425595801
-CSeq: 1 REGISTER
-Contact: <sip:62120000002005000000@$ipStr:9999;line=e74829c82eb7149>
-Max-Forwards: 70
-Expires: 3600
-Content-Length: 0
-\r\n
-''';
-    socket!.send(registerMessage.codeUnits, address, int.parse(portStr));
+//     String? ipStr = _preferences!.getString("ip");
+//     String? portStr = _preferences!.getString("port");
+//     if (ipStr == null || portStr == null) {
+//       return false;
+//     }
+//     InternetAddress? address = InternetAddress.tryParse(_preferences!.getString("ip")!);
+//     if (address == null) {
+//       Fluttertoast.showToast(msg: "注册IP错误！");
+//       return false;
+//     }
+//     String registerMessage = '''
+// \r\n
+// ''';
+//     socket!.send(registerMessage.codeUnits, address, int.parse(portStr));
     return true;
   }
 
@@ -215,35 +180,41 @@ Content-Length: 0
               Container(height: 50),
               DropdownButtonFormField(
                   decoration: const InputDecoration(labelText: '切换摄像头'),
-                  items: cameraList,
-                  value: 0,
+                  items: CameraManager().getCameraWidgets().toList(),
+                  value: StorageManager().getCamera(),
                   onChanged: (val) async {
                     if (controller == null) return;
-                    await controller!.setDescription(cameras[val]);
-                    selectCamera = val;
+                    StorageManager().setCamera(val);
+                    await controller!.setDescription(CameraManager().getCameras()[val]);
                     stopRecording();
                     Fluttertoast.showToast(msg: "切换摄像头后，请重新推流");
                   }),
               Container(height: 20),
               DropdownButtonFormField(
                   decoration: const InputDecoration(labelText: '选择清晰度'),
-                  items: CameraManager().getResolutions().toList(),
-                  value: ResolutionPreset.low,
+                  items: CameraManager().getResolutionWidgets().toList(),
+                  value: StorageManager().getResolution(),
                   onChanged: (val) async {
                     if (controller == null) return;
-                    setState(() {
-                      ready = false;
-                    });
+                    setState(() {ready = false;});
+
+                    // 停止推流并提示
                     stopRecording();
                     Fluttertoast.showToast(msg: "切换清晰度后，请重新推流");
                     // 停止原有相机
                     await controller!.dispose();
-                    controller = CameraController(cameras[selectCamera], val);
-                    selectResolution = val;
+                    StorageManager().setResolution(val);
+
+                    int selectCamera = StorageManager().getCamera();
+                    int selectResolution = StorageManager().getResolution();
+
+                    List<CameraDescription> cameras = CameraManager().getCameras();
+                    List<ResolutionPreset> resolutions = CameraManager().getResolutions();
+
+                    // 初始化新相机
+                    controller = CameraController(cameras[selectCamera], resolutions[selectResolution]);
                     await controller!.initialize();
-                    setState(() {
-                      ready = true;
-                    });
+                    setState(() {ready = true;});
                   }),
               Container(height: 20),
               recording ? ElevatedButton(onPressed: () {
